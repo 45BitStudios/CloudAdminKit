@@ -1,7 +1,8 @@
-// canImport(UIKit) is true on tvOS, but the notification-presentation APIs used below
-// (UNNotificationPresentationOptions.banner/.list, UNNotificationResponse handling) are
-// unavailable on tvOS — exclude it (docs/apple-multiplatform-ci-gotchas.md §3).
-#if canImport(UIKit) && !os(tvOS)
+// canImport(UIKit) is true on tvOS and watchOS, but the notification-presentation APIs used
+// below (UNNotificationPresentationOptions.banner/.list, UNNotificationResponse handling) are
+// unavailable on tvOS, and UIApplication/UIApplicationDelegate are unavailable on watchOS —
+// exclude both (docs/apple-multiplatform-ci-gotchas.md §3).
+#if canImport(UIKit) && !os(tvOS) && !os(watchOS)
 import CloudAdminPushUI
 import Foundation
 import UIKit
