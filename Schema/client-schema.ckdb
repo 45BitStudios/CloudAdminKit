@@ -1,0 +1,199 @@
+DEFINE SCHEMA
+
+    RECORD TYPE FeatureFlag (
+        "___recordID" REFERENCE QUERYABLE,
+        key STRING QUERYABLE SEARCHABLE SORTABLE,
+        enabled INT64 QUERYABLE,
+        platform LIST<STRING>,
+        minVersion STRING,
+        payload STRING,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE RemoteSetting (
+        "___recordID" REFERENCE QUERYABLE,
+        key STRING QUERYABLE SEARCHABLE SORTABLE,
+        valueType STRING QUERYABLE,
+        stringValue STRING,
+        intValue INT64,
+        doubleValue DOUBLE,
+        description STRING,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE FeatureRequest (
+        "___recordID" REFERENCE QUERYABLE,
+        title STRING QUERYABLE SEARCHABLE,
+        description STRING SEARCHABLE,
+        priority STRING QUERYABLE,
+        status STRING QUERYABLE,
+        category STRING QUERYABLE,
+        votes INT64 QUERYABLE SORTABLE,
+        isPublic INT64 QUERYABLE,
+        createdAt TIMESTAMP QUERYABLE SORTABLE,
+        updatedAt TIMESTAMP QUERYABLE SORTABLE,
+        userID STRING QUERYABLE,
+        contactEmail STRING,
+        tags LIST<STRING>,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE AnalyticsEvent (
+        "___recordID" REFERENCE QUERYABLE,
+        timestamp TIMESTAMP QUERYABLE SORTABLE,
+        eventType STRING QUERYABLE,
+        eventName STRING,
+        sessionID STRING,
+        userID STRING QUERYABLE,
+        anonymousID STRING,
+        screenName STRING,
+        previousScreenName STRING,
+        latitude DOUBLE,
+        longitude DOUBLE,
+        duration DOUBLE,
+        deviceInfo STRING,
+        properties STRING,
+        errorInfo STRING,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE LiveActivityConfig (
+        "___recordID" REFERENCE QUERYABLE,
+        name STRING QUERYABLE SORTABLE,
+        version INT64 QUERYABLE,
+        updatedAt TIMESTAMP QUERYABLE SORTABLE,
+        relevanceScore DOUBLE,
+        stateSchemaJSON STRING,
+        contentSchemaJSON STRING,
+        dismissalPolicy STRING,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE DeviceToken (
+        "___recordID" REFERENCE QUERYABLE,
+        token STRING QUERYABLE,
+        environment STRING QUERYABLE,
+        platform STRING QUERYABLE,
+        lastSeenAt TIMESTAMP QUERYABLE SORTABLE,
+        userID STRING QUERYABLE,
+        appVersion STRING,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE Device (
+        "___recordID" REFERENCE QUERYABLE,
+        deviceId STRING QUERYABLE,
+        userId STRING QUERYABLE,
+        pushToken STRING,
+        environment STRING QUERYABLE,
+        updatedAt TIMESTAMP SORTABLE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE LiveActivityStartToken (
+        "___recordID" REFERENCE QUERYABLE,
+        deviceId STRING QUERYABLE,
+        attributesType STRING QUERYABLE,
+        pushToStartToken STRING,
+        updatedAt TIMESTAMP SORTABLE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE LiveActivityInstance (
+        "___recordID" REFERENCE QUERYABLE,
+        correlationId STRING QUERYABLE,
+        deviceId STRING QUERYABLE,
+        activityId STRING QUERYABLE,
+        attributesType STRING QUERYABLE,
+        updateToken STRING,
+        startedAt TIMESTAMP SORTABLE,
+        updatedAt TIMESTAMP SORTABLE,
+        endedAt TIMESTAMP QUERYABLE SORTABLE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE BroadcastChannel (
+        "___recordID" REFERENCE QUERYABLE,
+        eventId STRING QUERYABLE,
+        channelId STRING,
+        attributesType STRING,
+        messageStoragePolicy INT64,
+        environment STRING QUERYABLE,
+        status STRING QUERYABLE,
+        createdAt TIMESTAMP SORTABLE,
+        endedAt TIMESTAMP SORTABLE,
+        updatedAt TIMESTAMP SORTABLE,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE PendingLiveActivityUpdate (
+        "___recordID" REFERENCE QUERYABLE,
+        correlationId STRING QUERYABLE,
+        event STRING,
+        contentState STRING,
+        alertTitle STRING,
+        alertBody STRING,
+        dismissalDate TIMESTAMP,
+        environment STRING,
+        updatedAt TIMESTAMP,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
+
+    RECORD TYPE PushLog (
+        "___recordID" REFERENCE QUERYABLE,
+        appId STRING QUERYABLE,
+        kind STRING QUERYABLE,
+        userId STRING QUERYABLE,
+        correlationId STRING QUERYABLE,
+        createdAt TIMESTAMP QUERYABLE SORTABLE,
+        source STRING,
+        environment STRING,
+        success INT64,
+        apnsError STRING,
+        tokenPruned INT64,
+        deviceId STRING,
+        activityId STRING,
+        attributesType STRING,
+        event STRING,
+        status STRING,
+        message STRING,
+        alertTitle STRING,
+        alertBody STRING,
+        payload STRING,
+        contentState STRING,
+        attributes STRING,
+        apnsPushType STRING,
+        apnsTopic STRING,
+        apnsPriority INT64,
+        apnsExpiration INT64,
+        apnsCollapseId STRING,
+        apnsId STRING,
+        requestId STRING,
+        replayOf STRING,
+        tokenSuffix STRING,
+        GRANT WRITE TO "_creator",
+        GRANT CREATE TO "_icloud",
+        GRANT READ TO "_world"
+    );
