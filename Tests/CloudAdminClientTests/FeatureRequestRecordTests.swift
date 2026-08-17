@@ -56,5 +56,13 @@ import Testing
         #expect(record["title"] as? String == "Dark mode")
         #expect(record["votes"] as? Int == 42)
         #expect(record["isPublic"] as? Int == 1)
+        #expect(record["id"] == nil)
+    }
+
+    @Test func fromCKRecordUsesRecordNameWhenIdFieldAbsent() throws {
+        let record = try sample().toCKRecord()
+        record["id"] = nil
+        let restored = try #require(try FeatureRequest.fromCKRecord(record))
+        #expect(restored.id == record.recordID.recordName)
     }
 }

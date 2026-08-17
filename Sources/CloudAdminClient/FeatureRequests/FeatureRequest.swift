@@ -63,8 +63,8 @@ public struct FeatureRequest: FeatureRequestable, Sendable, Codable, Identifiabl
     public var recordType: String { Self.recordType }
 
     /// CloudKit field names. Raw values are the stored schema — append, never rename.
-    public enum FieldKey: String {
-        case id
+    /// There is no `id` field; the record name is the identifier.
+    public enum FieldKey: String, CaseIterable {
         case title
         case description
         case priority
@@ -173,7 +173,6 @@ public struct FeatureRequest: FeatureRequestable, Sendable, Codable, Identifiabl
         let recordTypeName = recordType ?? self.recordType
         let record = CKRecord(recordType: recordTypeName, recordID: CKRecord.ID(recordName: recordID))
 
-        record[FieldKey.id.rawValue] = id
         record[FieldKey.title.rawValue] = title
         record[FieldKey.description.rawValue] = description
         record[FieldKey.priority.rawValue] = priority.rawValue
@@ -206,8 +205,10 @@ public struct FeatureRequest: FeatureRequestable, Sendable, Codable, Identifiabl
     
     /// Create from CloudKit record
     public static func fromCKRecord(_ record: CKRecord) throws -> FeatureRequest? {
-        guard let id = record[FieldKey.id.rawValue] as? String,
-              let title = record[FieldKey.title.rawValue] as? String,
+        // Admin-written records may still carry a leftover `id` field; client-written
+        // records use the record name only. Prefer the stored field when present.
+        let id = (record["id"] as? String) ?? record.recordID.recordName
+        guard let title = record[FieldKey.title.rawValue] as? String,
               let description = record[FieldKey.description.rawValue] as? String,
               let priorityRaw = record[FieldKey.priority.rawValue] as? String,
               let statusRaw = record[FieldKey.status.rawValue] as? String,
