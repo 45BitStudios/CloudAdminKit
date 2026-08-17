@@ -46,7 +46,7 @@ public struct FeatureEnabled: DynamicProperty {
     ///
     /// - Parameters:
     ///   - key: The feature flag key
-    ///   - default: Default value if flag is not found (default: false)
+    ///   - defaultValue: Default value if flag is not found (default: false)
     public init(_ key: String, default defaultValue: Bool = false) {
         self.key = key
         self.defaultValue = defaultValue
@@ -284,7 +284,7 @@ public extension View {
     ///
     /// - Parameters:
     ///   - flag: The flag key
-    ///   - default: Default value if flag not found
+    ///   - defaultValue: Default value if flag not found
     /// - Returns: Modified view
     func showWhenFeatureEnabled(_ flag: String, default defaultValue: Bool = false) -> some View {
         modifier(FeatureFlagModifier(flag: flag, default: defaultValue, showWhenEnabled: true))
@@ -294,7 +294,7 @@ public extension View {
     ///
     /// - Parameters:
     ///   - flag: The flag key
-    ///   - default: Default value if flag not found
+    ///   - defaultValue: Default value if flag not found
     /// - Returns: Modified view
     func hideWhenFeatureEnabled(_ flag: String, default defaultValue: Bool = false) -> some View {
         modifier(FeatureFlagModifier(flag: flag, default: defaultValue, showWhenEnabled: false))
