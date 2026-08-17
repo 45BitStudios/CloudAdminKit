@@ -1,6 +1,10 @@
 // swift-tools-version: 6.2
 // CloudAdminKit — the public client SDK for apps managed by CloudAdmin.
 //
+// Advertised SwiftPM pin: 1.0.0 (README / AGENTS.md / Integration.md).
+// FIXME: Vince must tag 1.0.0 after merge so `from: "1.0.0"` resolves on
+// https://github.com/45BitStudios/CloudAdminKit.git. Do not tag from this branch.
+//
 // Two independent halves, no cross-target dependency between them:
 //   CloudAdminClient/CloudAdminClientUI — feature flags, remote settings, analytics,
 //     feature requests. Talks to CloudAdmin's CloudKit backend on behalf of any app.
@@ -45,14 +49,16 @@ let package = Package(
         // external apps depend on this directly. No SwiftUI (see CloudAdminClientUI).
         .target(
             name: "CloudAdminClient",
+            resources: [.process("PrivacyInfo.xcprivacy")],
             swiftSettings: sharedSwiftSettings
         ),
         // SwiftUI surface for CloudAdminClient: @FeatureEnabled / @Remote*Setting property
-        // wrappers, analytics view modifiers, and PushAppDelegate (forwards into
-        // CloudAdminPushUI's PushRegistrationController).
+        // wrappers, analytics view modifiers, debug views. No push — that lives in
+        // CloudAdminPushUI so an app that only wants @FeatureEnabled does not link
+        // UserNotifications / registerForRemoteNotifications (ITMS-90683).
         .target(
             name: "CloudAdminClientUI",
-            dependencies: ["CloudAdminClient", "CloudAdminPushUI"],
+            dependencies: ["CloudAdminClient"],
             swiftSettings: sharedSwiftSettings
         ),
         // Zero-dep HTTP client for IkigaiServer (device + Live Activity token registration).
@@ -60,9 +66,19 @@ let package = Package(
             name: "CloudAdminPush",
             swiftSettings: sharedSwiftSettings
         ),
-        // SwiftUI-observable push registration/authorization state. See its ua-debt comment.
+        // SwiftUI-observable push registration/authorization state + PushAppDelegate.
+        // See PushRegistrationController's ua-debt comment.
         .target(
             name: "CloudAdminPushUI",
+            swiftSettings: sharedSwiftSettings
+        ),
+
+        // Watch / tv fixture: CloudAdminClient only. Used to prove the core SDK
+        // compiles on every platform Package.swift claims.
+        .target(
+            name: "CloudAdminClientOnlyFixture",
+            dependencies: ["CloudAdminClient"],
+            path: "Fixtures/CloudAdminClientOnly",
             swiftSettings: sharedSwiftSettings
         ),
 
@@ -76,6 +92,11 @@ let package = Package(
         .testTarget(
             name: "CloudAdminPushTests",
             dependencies: ["CloudAdminPush"],
+            swiftSettings: sharedSwiftSettings
+        ),
+        .testTarget(
+            name: "CloudAdminClientUITests",
+            dependencies: ["CloudAdminClient", "CloudAdminClientUI"],
             swiftSettings: sharedSwiftSettings
         ),
     ]

@@ -131,7 +131,7 @@ public struct FeatureFlag: Identifiable, Sendable, Codable, Hashable {
     public static let recordType = "FeatureFlag"
 
     /// CloudKit field keys
-    public enum FieldKey: String {
+    public enum FieldKey: String, CaseIterable {
         case key
         case enabled
         case platform

@@ -63,6 +63,7 @@ public final class AnalyticsObserver {
 
         queueSize = await service.queueSize
         recentEvents = await service.recentEvents
+        isEnabled = await service.isEnabled
     }
 
     /// Identifies the user

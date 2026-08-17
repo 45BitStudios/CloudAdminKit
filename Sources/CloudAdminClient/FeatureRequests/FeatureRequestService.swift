@@ -159,15 +159,36 @@ public final class FeatureRequestService {
     }
 
     /// Full-text search over titles and descriptions.
+    ///
+    /// `title` is QUERYABLE SEARCHABLE; `description` is SEARCHABLE only. CloudKit
+    /// rejects `CONTAINS` on a non-QUERYABLE field, so the server query is limited
+    /// to public records (`isPublic` is QUERYABLE) and both fields are filtered
+    /// client-side.
     public func search(_ searchText: String, limit: Int = 20) async throws -> [FeatureRequest] {
+        guard let trimmed = Self.normalizedSearchQuery(searchText) else { return [] }
+        let candidates = try await query(Self.searchCandidatePredicate(), limit: max(limit * 10, 100))
+        return Array(candidates.filter { Self.matchesSearch($0, query: trimmed) }.prefix(limit))
+    }
+
+    /// `nil` when the query is empty or whitespace — callers must not hit CloudKit.
+    public static func normalizedSearchQuery(_ searchText: String) -> String? {
         let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return [] }
-        let predicate = NSPredicate(
-            format: "%K CONTAINS[c] %@ OR %K CONTAINS[c] %@",
-            FeatureRequest.FieldKey.title.rawValue, trimmed,
-            FeatureRequest.FieldKey.description.rawValue, trimmed
+        return trimmed.isEmpty ? nil : trimmed
+    }
+
+    /// CloudKit predicate for search candidates. Uses only QUERYABLE fields.
+    public static func searchCandidatePredicate() -> NSPredicate {
+        NSPredicate(
+            format: "%K == %@",
+            FeatureRequest.FieldKey.isPublic.rawValue,
+            NSNumber(value: true)
         )
-        return try await query(predicate, limit: limit)
+    }
+
+    /// Title or description substring match (case-insensitive).
+    public static func matchesSearch(_ request: FeatureRequest, query: String) -> Bool {
+        request.title.localizedCaseInsensitiveContains(query)
+            || request.description.localizedCaseInsensitiveContains(query)
     }
 
     /// Aggregate statistics computed from up to 1000 requests.

@@ -15,7 +15,7 @@ entitlements, etc.) scoped to the features you actually ship.
 - **`CloudAdminClient`** — Analytics, FeatureFlags, FeatureRequests, RemoteSettings services. No UI.
 - **`CloudAdminClientUI`** — SwiftUI property wrappers, view modifiers, and debug views for the above.
 - **`CloudAdminPush`** — APNs registration and send/update HTTP client (`CloudAdminPushClient`).
-- **`CloudAdminPushUI`** — `PushRegistrationController`, an `@Observable` APNs delegate helper.
+- **`CloudAdminPushUI`** — `PushRegistrationController` and `PushAppDelegate`, an `@Observable` APNs helper.
 
 ## Add the package
 
@@ -35,27 +35,70 @@ entitlements, etc.) scoped to the features you actually ship.
 )
 ```
 
+## Import the CloudKit schema (required before first run)
+
+CloudAdminKit reads and writes record types that must already exist in **your app's** container.
+Import `Schema/client-schema.ckdb` from this repo in CloudKit Console:
+
+1. Open your container → **Development** → **Schema** → **Import Schema**
+2. Choose `Schema/client-schema.ckdb`
+3. Deploy the schema to **Production** before shipping
+
+Until the schema is imported, fetches return empty and saves fail. Do not invent extra fields —
+the shipped `.ckdb` is the contract.
+
 ## Usage
 
 Every service takes your app's own CloudKit container identifier — CloudAdminKit never assumes a
-shared container.
+shared container. Feature flags and remote settings stay at their configure-time defaults until
+you call `fetchFlags()` / `fetchSettings()` (or `initialize()`). The services are actors, so
+reads are `await`.
 
 ```swift
 import CloudAdminClient
 
-AnalyticsService.configure(with: .init(containerIdentifier: "iCloud.com.yourcompany.yourapp"))
-FeatureFlagService.configure(with: .init(containerIdentifier: "iCloud.com.yourcompany.yourapp"))
-RemoteSettingsService.configure(with: .init(containerIdentifier: "iCloud.com.yourcompany.yourapp"))
-let requests = FeatureRequestService(containerIdentifier: "iCloud.com.yourcompany.yourapp")
+let container = "iCloud.com.yourcompany.yourapp"
+
+AnalyticsService.configure(with: .init(containerIdentifier: container))
+FeatureFlagService.configure(with: .init(containerIdentifier: container))
+RemoteSettingsService.configure(with: .init(containerIdentifier: container))
+let requests = FeatureRequestService(containerIdentifier: container)
+
+try? await FeatureFlagService.shared?.fetchFlags()
+try? await RemoteSettingsService.shared?.fetchSettings()
 
 await AnalyticsService.shared?.trackScreen("Home")
-let isOn = FeatureFlagService.shared?.isEnabled("new_paywall") ?? false
-let timeout = RemoteSettingsService.shared?.double(for: "apiTimeout", default: 30) ?? 30
-let submitted = try await requests.submit(FeatureRequest(title: "Dark mode", description: "…"))
+let isOn = await FeatureFlagService.shared?.isEnabled("new_paywall") ?? false
+let timeout = await RemoteSettingsService.shared?.double(for: "apiTimeout", default: 30) ?? 30
+let submitted = try await requests.submit(FeatureRequest(title: "Dark mode", description: "Please add a dark theme."))
 ```
 
+SwiftUI wrappers need an observer in the environment so views update after a refresh. Put the
+observers on your `App` (or a root view) — the wrappers read the configured services even
+without them, but they will not redraw when CloudKit values change.
+
 ```swift
+import CloudAdminClient
 import CloudAdminClientUI
+import SwiftUI
+
+@main
+struct MyApp: App {
+    @State private var flags = FeatureFlagObserver()
+    @State private var settings = RemoteSettingsObserver()
+
+    var body: some Scene {
+        WindowGroup {
+            PaywallView()
+                .featureFlags(flags)
+                .remoteSettings(settings)
+                .task {
+                    await flags.startObserving()
+                    await settings.startObserving()
+                }
+        }
+    }
+}
 
 struct PaywallView: View {
     @FeatureEnabled("new_paywall") var showsNewPaywall
@@ -76,23 +119,38 @@ NavigationStack { FeatureFlagDebugView() }
 NavigationStack { RemoteSettingsDebugView() }
 ```
 
-Push registration:
+Push registration — persist your own stable `deviceId` string (UserDefaults, Keychain, or a
+file). Wire `PushRegistrationController.onDeviceToken` to the HTTP client so APNs rotations
+re-register automatically:
 
 ```swift
 import CloudAdminPush
 import CloudAdminPushUI
 
+let deviceId = UserDefaults.standard.string(forKey: "deviceId") ?? {
+    let id = UUID().uuidString
+    UserDefaults.standard.set(id, forKey: "deviceId")
+    return id
+}()
+
 let push = CloudAdminPushClient(
     baseURL: URL(string: "https://your-cloudadmin-server")!,
     appId: "yourapp",
     apiKey: ProcessInfo.processInfo.environment["CLOUDADMIN_API_KEY"] ?? "",
-    deviceId: Keychain.deviceId
+    deviceId: deviceId
 )
 
+PushRegistrationController.shared.onDeviceToken = { token in
+    Task { try? await push.registerDevice(token: token) }
+}
 await PushRegistrationController.shared.requestAuthorization()
 PushRegistrationController.shared.registerForRemoteNotifications()
-// In your AppDelegate's didRegisterForRemoteNotificationsWithDeviceToken:
-try await push.registerDevice(token: deviceToken)
+
+// Or drop in the adaptor (still a CloudAdminPushUI type — do not import
+// CloudAdminClientUI just to get this):
+//
+//   import CloudAdminPushUI
+//   @UIApplicationDelegateAdaptor(PushAppDelegate.self) private var pushDelegate
 ```
 
 ## Documentation

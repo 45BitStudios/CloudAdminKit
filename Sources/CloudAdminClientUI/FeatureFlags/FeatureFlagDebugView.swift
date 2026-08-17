@@ -297,14 +297,14 @@ public struct FeatureFlagDebugView: View {
             guard let service = FeatureFlagService.shared else { return }
 
             if overrides[flag.key] != nil {
-                // Remove override
                 await service.setOverride(flag.key, value: nil)
                 overrides.removeValue(forKey: flag.key)
+                await observer?.setOverride(flag.key, value: nil)
             } else {
-                // Add override (toggle current state)
                 let newValue = !flag.isEnabled
                 await service.setOverride(flag.key, value: newValue)
                 overrides[flag.key] = newValue
+                await observer?.setOverride(flag.key, value: newValue)
             }
         }
         #endif
@@ -316,6 +316,11 @@ public struct FeatureFlagDebugView: View {
             guard let service = FeatureFlagService.shared else { return }
             await service.clearOverrides()
             overrides.removeAll()
+            if let observer {
+                for key in observer.flagStates.keys {
+                    await observer.setOverride(key, value: nil)
+                }
+            }
         }
         #endif
     }

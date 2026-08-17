@@ -273,9 +273,8 @@ public struct AnalyticsEvent: Identifiable, Codable, Sendable {
     /// CloudKit record type name
     public static let recordType = "AnalyticsEvent"
 
-    /// CloudKit field keys
-    public enum FieldKey: String {
-        case id
+    /// CloudKit field keys. There is no `id` field; the record name is the identifier.
+    public enum FieldKey: String, CaseIterable {
         case sessionID
         case userID
         case anonymousID
@@ -336,7 +335,6 @@ public struct AnalyticsEvent: Identifiable, Codable, Sendable {
         let recordID = CKRecord.ID(recordName: id.uuidString)
         let record = CKRecord(recordType: Self.recordType, recordID: recordID)
 
-        record[FieldKey.id.rawValue] = id.uuidString
         record[FieldKey.sessionID.rawValue] = sessionID.uuidString
         record[FieldKey.userID.rawValue] = userID
         record[FieldKey.anonymousID.rawValue] = anonymousID
@@ -373,8 +371,7 @@ public struct AnalyticsEvent: Identifiable, Codable, Sendable {
     /// Creates an event from a CloudKit record
     public init?(from record: CKRecord) {
         guard record.recordType == Self.recordType,
-              let idString = record[FieldKey.id.rawValue] as? String,
-              let id = UUID(uuidString: idString),
+              let id = UUID(uuidString: record.recordID.recordName),
               let sessionIDString = record[FieldKey.sessionID.rawValue] as? String,
               let sessionID = UUID(uuidString: sessionIDString),
               let anonymousID = record[FieldKey.anonymousID.rawValue] as? String,

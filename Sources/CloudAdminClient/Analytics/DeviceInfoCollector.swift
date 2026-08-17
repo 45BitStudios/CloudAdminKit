@@ -15,6 +15,9 @@ import AppKit
 #if canImport(Network)
 import Network
 #endif
+#if os(watchOS)
+import WatchKit
+#endif
 
 /// Collects device and app information for analytics events
 @available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)
@@ -115,7 +118,14 @@ public final class DeviceInfoCollector: Sendable {
         let scale = UITraitCollection.current.displayScale
         return scale > 0 ? Double(scale) : 1.0
         #elseif os(macOS)
-        return Double(NSScreen.main?.backingScaleFactor ?? 1.0)
+        // NSScreen is AppKit-main-thread only; analytics events are created on the
+        // AnalyticsService actor, so hop if needed.
+        if Thread.isMainThread {
+            return Double(NSScreen.main?.backingScaleFactor ?? 1.0)
+        }
+        return DispatchQueue.main.sync {
+            Double(NSScreen.main?.backingScaleFactor ?? 1.0)
+        }
         #elseif os(watchOS)
         return Double(WKInterfaceDevice.current().screenScale)
         #elseif os(visionOS)
@@ -203,8 +213,3 @@ public actor NetworkMonitor {
 }
 #endif
 
-// MARK: - watchOS Support
-
-#if os(watchOS)
-import WatchKit
-#endif

@@ -210,7 +210,7 @@ public struct RemoteSetting: Identifiable, Sendable, Codable, Hashable {
     public static let recordType = "RemoteSetting"
 
     /// CloudKit field keys
-    public enum FieldKey: String {
+    public enum FieldKey: String, CaseIterable {
         case key
         case valueType
         case stringValue
