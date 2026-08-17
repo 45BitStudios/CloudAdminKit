@@ -25,7 +25,7 @@ struct PropertyWrapperResolutionTests {
     func featureEnabledConfiguredWithoutObserver() {
         reset()
         FeatureFlagService.configure(with: .init(
-            containerIdentifier: "iCloud.test.flags.\(UUID().uuidString)",
+            containerIdentifier: "com.cloudadminkit.test.flags.\(UUID().uuidString)",
             defaultFlags: ["new_paywall": true]
         ))
         #expect(FeatureEnabled.resolvedValue("new_paywall", default: false) == true)
@@ -37,7 +37,7 @@ struct PropertyWrapperResolutionTests {
     func featureEnabledHonorsOverride() async {
         reset()
         let service = FeatureFlagService.configure(with: .init(
-            containerIdentifier: "iCloud.test.flags.\(UUID().uuidString)",
+            containerIdentifier: "com.cloudadminkit.test.flags.\(UUID().uuidString)",
             defaultFlags: ["new_paywall": false]
         ))
         #expect(await service.isEnabled("new_paywall") == false)
@@ -52,7 +52,7 @@ struct PropertyWrapperResolutionTests {
     func featureEnabledPrefersObserver() {
         reset()
         FeatureFlagService.configure(with: .init(
-            containerIdentifier: "iCloud.test.flags.\(UUID().uuidString)",
+            containerIdentifier: "com.cloudadminkit.test.flags.\(UUID().uuidString)",
             defaultFlags: ["new_paywall": true]
         ))
         let observer = FeatureFlagObserver()
@@ -75,7 +75,7 @@ struct PropertyWrapperResolutionTests {
     func remoteSettingsConfiguredWithoutObserver() {
         reset()
         RemoteSettingsService.configure(with: .init(
-            containerIdentifier: "iCloud.test.settings.\(UUID().uuidString)",
+            containerIdentifier: "com.cloudadminkit.test.settings.\(UUID().uuidString)",
             defaults: [
                 "apiTimeout": .double(42),
                 "supportEmail": .string("ok@app.com"),

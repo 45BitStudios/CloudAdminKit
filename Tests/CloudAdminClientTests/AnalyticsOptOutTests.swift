@@ -7,7 +7,7 @@ struct AnalyticsOptOutTests {
     private func makeService() -> AnalyticsService {
         UserDefaults.standard.removeObject(forKey: AnalyticsService.optOutStorageKey)
         return AnalyticsService(configuration: AnalyticsConfiguration(
-            containerIdentifier: "iCloud.test.analytics.\(UUID().uuidString)",
+            containerIdentifier: "com.cloudadminkit.test.analytics.\(UUID().uuidString)",
             batchSize: 10_000,
             batchInterval: 3600,
             isEnabled: true
@@ -45,7 +45,7 @@ struct AnalyticsOptOutTests {
         await first.optOut()
 
         let second = AnalyticsService(configuration: AnalyticsConfiguration(
-            containerIdentifier: "iCloud.test.analytics.\(UUID().uuidString)",
+            containerIdentifier: "com.cloudadminkit.test.analytics.\(UUID().uuidString)",
             batchSize: 10_000,
             batchInterval: 3600,
             isEnabled: true

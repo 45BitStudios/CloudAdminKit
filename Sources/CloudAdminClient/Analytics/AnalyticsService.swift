@@ -104,8 +104,14 @@ public actor AnalyticsService {
     // MARK: - Properties
 
     private let configuration: AnalyticsConfiguration
-    private let container: CKContainer
-    private let database: CKDatabase
+    private var container: CKContainer {
+        CKContainer(identifier: configuration.containerIdentifier)
+    }
+    private var database: CKDatabase {
+        configuration.usePrivateDatabase
+            ? container.privateCloudDatabase
+            : container.publicCloudDatabase
+    }
 
     /// Current session ID
     private var sessionID: UUID = UUID()
@@ -167,10 +173,6 @@ public actor AnalyticsService {
 
     public init(configuration: AnalyticsConfiguration) {
         self.configuration = configuration
-        self.container = CKContainer(identifier: configuration.containerIdentifier)
-        self.database = configuration.usePrivateDatabase
-            ? container.privateCloudDatabase
-            : container.publicCloudDatabase
         self.anonymousID = Self.getOrCreateAnonymousID()
 
         // Load persisted queue

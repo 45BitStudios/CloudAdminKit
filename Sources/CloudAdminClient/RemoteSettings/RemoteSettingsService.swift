@@ -174,8 +174,14 @@ public actor RemoteSettingsService {
     // MARK: - Properties
 
     private let configuration: RemoteSettingsConfiguration
-    private let container: CKContainer
-    private let database: CKDatabase
+    private var container: CKContainer {
+        CKContainer(identifier: configuration.containerIdentifier)
+    }
+    private var database: CKDatabase {
+        configuration.usePublicDatabase
+            ? container.publicCloudDatabase
+            : container.privateCloudDatabase
+    }
 
     private var settings: [String: RemoteSetting] = [:]
     private var lastFetchDate: Date?
@@ -204,10 +210,6 @@ public actor RemoteSettingsService {
     /// Creates a remote settings service
     public init(configuration: RemoteSettingsConfiguration) {
         self.configuration = configuration
-        self.container = CKContainer(identifier: configuration.containerIdentifier)
-        self.database = configuration.usePublicDatabase
-            ? container.publicCloudDatabase
-            : container.privateCloudDatabase
         self.cache = RemoteSettingsCache(
             suiteName: configuration.containerIdentifier,
             expirationInterval: configuration.cacheExpirationInterval

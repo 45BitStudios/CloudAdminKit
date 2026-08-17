@@ -145,8 +145,14 @@ public actor FeatureFlagService {
     // MARK: - Properties
 
     private let configuration: FeatureFlagConfiguration
-    private let container: CKContainer
-    private let database: CKDatabase
+    private var container: CKContainer {
+        CKContainer(identifier: configuration.containerIdentifier)
+    }
+    private var database: CKDatabase {
+        configuration.usePublicDatabase
+            ? container.publicCloudDatabase
+            : container.privateCloudDatabase
+    }
 
     private var flags: [String: FeatureFlag] = [:]
     private var lastFetchDate: Date?
@@ -180,10 +186,6 @@ public actor FeatureFlagService {
     /// - Parameter configuration: Service configuration
     public init(configuration: FeatureFlagConfiguration) {
         self.configuration = configuration
-        self.container = CKContainer(identifier: configuration.containerIdentifier)
-        self.database = configuration.usePublicDatabase
-            ? container.publicCloudDatabase
-            : container.privateCloudDatabase
         self.cache = FeatureFlagCache(
             suiteName: configuration.containerIdentifier,
             expirationInterval: configuration.cacheExpirationInterval

@@ -73,6 +73,15 @@ let package = Package(
             swiftSettings: sharedSwiftSettings
         ),
 
+        // Watch / tv fixture: CloudAdminClient only. Used to prove the core SDK
+        // compiles on every platform Package.swift claims.
+        .target(
+            name: "CloudAdminClientOnlyFixture",
+            dependencies: ["CloudAdminClient"],
+            path: "Fixtures/CloudAdminClientOnly",
+            swiftSettings: sharedSwiftSettings
+        ),
+
         // MARK: - Tests (Swift Testing — @Suite/@Test, never XCTest)
 
         .testTarget(

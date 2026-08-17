@@ -2,7 +2,9 @@ import Foundation
 import Testing
 @testable import CloudAdminClient
 
-@Suite struct FeatureRequestSearchTests {
+@Suite
+@MainActor
+struct FeatureRequestSearchTests {
     private func request(title: String, description: String, isPublic: Bool = true) -> FeatureRequest {
         FeatureRequest(
             id: UUID().uuidString,
