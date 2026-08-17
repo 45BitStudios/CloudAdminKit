@@ -56,6 +56,63 @@ public struct RemoteSettingsConfiguration: Sendable {
     }
 }
 
+// MARK: - Evaluation cache
+
+/// Last-known setting values published by ``RemoteSettingsService``.
+///
+/// `@Remote*Setting` wrappers read this when no `RemoteSettingsObserver` is in the environment.
+/// Updated after `configure`, `fetchSettings()`, and cache load.
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)
+@MainActor
+public enum RemoteSettingsEvaluationCache {
+    /// Whether ``RemoteSettingsService/configure(with:)`` has run in this process.
+    public private(set) static var isConfigured = false
+
+    /// Key → value, defaults merged under fetched settings.
+    public private(set) static var values: [String: SettingValue] = [:]
+
+    public static func string(for key: String, default defaultValue: String) -> String {
+        guard isConfigured else { return defaultValue }
+        return values[key]?.asString ?? defaultValue
+    }
+
+    public static func bool(for key: String, default defaultValue: Bool) -> Bool {
+        guard isConfigured else { return defaultValue }
+        return values[key]?.asBool ?? defaultValue
+    }
+
+    public static func int(for key: String, default defaultValue: Int) -> Int {
+        guard isConfigured else { return defaultValue }
+        return values[key]?.asInt ?? defaultValue
+    }
+
+    public static func double(for key: String, default defaultValue: Double) -> Double {
+        guard isConfigured else { return defaultValue }
+        return values[key]?.asDouble ?? defaultValue
+    }
+
+    public static func url(for key: String, default defaultValue: URL?) -> URL? {
+        guard isConfigured else { return defaultValue }
+        return values[key]?.asURL ?? defaultValue
+    }
+
+    /// Test hook — clears the process-wide snapshot.
+    public static func reset() {
+        isConfigured = false
+        values = [:]
+    }
+
+    static func markConfigured(defaults: [String: SettingValue]) {
+        isConfigured = true
+        values = defaults
+    }
+
+    static func replace(_ newValues: [String: SettingValue]) {
+        isConfigured = true
+        values = newValues
+    }
+}
+
 // MARK: - Errors
 
 /// Errors that can occur in the remote settings service
@@ -136,6 +193,7 @@ public actor RemoteSettingsService {
     @MainActor
     @discardableResult
     public static func configure(with configuration: RemoteSettingsConfiguration) -> RemoteSettingsService {
+        RemoteSettingsEvaluationCache.markConfigured(defaults: configuration.defaults)
         let service = RemoteSettingsService(configuration: configuration)
         shared = service
         return service
@@ -158,6 +216,7 @@ public actor RemoteSettingsService {
         // Load cached settings immediately
         Task {
             await loadCachedSettings()
+            await publishEvaluationCache()
         }
     }
 
@@ -309,6 +368,7 @@ public actor RemoteSettingsService {
 
             // Update cache
             await saveToCache()
+            await publishEvaluationCache()
 
         } catch {
             // On failure, use cached data if available
@@ -382,9 +442,20 @@ public actor RemoteSettingsService {
         await cache.clear()
         settings.removeAll()
         lastFetchDate = nil
+        await publishEvaluationCache()
     }
 
     // MARK: - Private Methods
+
+    private func publishEvaluationCache() async {
+        var merged = configuration.defaults
+        for (key, setting) in settings {
+            merged[key] = setting.value
+        }
+        await MainActor.run {
+            RemoteSettingsEvaluationCache.replace(merged)
+        }
+    }
 
     private func loadCachedSettings() async {
         let cached = await cache.loadSettings()

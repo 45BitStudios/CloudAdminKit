@@ -82,5 +82,10 @@ let package = Package(
             dependencies: ["CloudAdminPush"],
             swiftSettings: sharedSwiftSettings
         ),
+        .testTarget(
+            name: "CloudAdminClientUITests",
+            dependencies: ["CloudAdminClient", "CloudAdminClientUI"],
+            swiftSettings: sharedSwiftSettings
+        ),
     ]
 )

@@ -54,14 +54,22 @@ public struct FeatureEnabled: DynamicProperty {
 
     @MainActor
     public var wrappedValue: Bool {
-        // First check observer for reactive updates
-        if let observer = observer {
+        Self.resolvedValue(key, default: defaultValue, observer: observer)
+    }
+
+    /// Resolves a flag without constructing a SwiftUI view. Observer wins when
+    /// present; otherwise the service evaluation cache (or `defaultValue` if
+    /// the service was never configured).
+    @MainActor
+    public static func resolvedValue(
+        _ key: String,
+        default defaultValue: Bool = false,
+        observer: FeatureFlagObserver? = nil
+    ) -> Bool {
+        if let observer {
             return observer.flagStates[key] ?? defaultValue
         }
-
-        // Fall back to shared service if no observer
-        // The observer should be preferred for reactive updates
-        return FeatureFlagService.shared != nil ? defaultValue : defaultValue
+        return FeatureFlagEvaluationCache.isEnabled(key, default: defaultValue)
     }
 }
 

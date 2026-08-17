@@ -55,6 +55,43 @@ public struct FeatureFlagConfiguration: Sendable {
     }
 }
 
+/// Last-known flag evaluations published by ``FeatureFlagService``.
+///
+/// `@FeatureEnabled` reads this when no `FeatureFlagObserver` is in the environment.
+/// Updated after `configure`, `fetchFlags()`, cache load, and DEBUG overrides.
+@available(iOS 16.0, macOS 13.0, tvOS 16.0, watchOS 9.0, visionOS 1.0, *)
+@MainActor
+public enum FeatureFlagEvaluationCache {
+    /// Whether ``FeatureFlagService/configure(with:)`` has run in this process.
+    public private(set) static var isConfigured = false
+
+    /// Evaluated key → enabled, including DEBUG overrides when present.
+    public private(set) static var values: [String: Bool] = [:]
+
+    /// Returns the cached evaluation, or `defaultValue` if the service is unconfigured
+    /// or the key has never been seen.
+    public static func isEnabled(_ key: String, default defaultValue: Bool = false) -> Bool {
+        guard isConfigured else { return defaultValue }
+        return values[key] ?? defaultValue
+    }
+
+    /// Test hook — clears the process-wide snapshot.
+    public static func reset() {
+        isConfigured = false
+        values = [:]
+    }
+
+    static func markConfigured(defaults: [String: Bool]) {
+        isConfigured = true
+        values = defaults
+    }
+
+    static func replace(_ newValues: [String: Bool]) {
+        isConfigured = true
+        values = newValues
+    }
+}
+
 /// Errors that can occur in the feature flag service
 public enum FeatureFlagError: Error, LocalizedError {
     case cloudKitNotAvailable
@@ -130,6 +167,7 @@ public actor FeatureFlagService {
     @MainActor
     @discardableResult
     public static func configure(with configuration: FeatureFlagConfiguration) -> FeatureFlagService {
+        FeatureFlagEvaluationCache.markConfigured(defaults: configuration.defaultFlags)
         let service = FeatureFlagService(configuration: configuration)
         shared = service
         return service
@@ -154,6 +192,7 @@ public actor FeatureFlagService {
         // Load cached flags immediately
         Task {
             await loadCachedFlags()
+            await publishEvaluationCache()
         }
     }
 
@@ -163,13 +202,10 @@ public actor FeatureFlagService {
     ///
     /// - Parameter key: The flag key to check
     /// - Returns: true if the flag is enabled and applicable
+    ///
+    /// DEBUG local overrides (``setOverride(_:value:)``) win over CloudKit and defaults.
     public func isEnabled(_ key: String) -> Bool {
-        if let flag = flags[key] {
-            return flag.evaluate(appVersion: configuration.appVersion)
-        }
-
-        // Fall back to default value
-        return configuration.defaultFlags[key] ?? false
+        evaluatedIsEnabled(key)
     }
 
     /// Gets a feature flag by key
@@ -222,6 +258,7 @@ public actor FeatureFlagService {
 
             // Update cache
             await saveToCache()
+            await publishEvaluationCache()
 
         } catch {
             // On failure, use cached data if available
@@ -287,6 +324,7 @@ public actor FeatureFlagService {
         await cache.clear()
         flags.removeAll()
         lastFetchDate = nil
+        await publishEvaluationCache()
     }
 
     // MARK: - Local Overrides (Debug)
@@ -299,12 +337,13 @@ public actor FeatureFlagService {
     /// - Parameters:
     ///   - key: Flag key
     ///   - value: Override value (nil to remove override)
-    public func setOverride(_ key: String, value: Bool?) {
+    public func setOverride(_ key: String, value: Bool?) async {
         if let value = value {
             localOverrides[key] = value
         } else {
             localOverrides.removeValue(forKey: key)
         }
+        await publishEvaluationCache()
     }
 
     /// Checks if a flag has a local override
@@ -318,20 +357,51 @@ public actor FeatureFlagService {
     }
 
     /// Clears all local overrides
-    public func clearOverrides() {
+    public func clearOverrides() async {
         localOverrides.removeAll()
+        await publishEvaluationCache()
     }
 
-    /// Checks if a feature flag is enabled (with override support)
+    /// Checks if a feature flag is enabled (with override support).
+    /// Same as ``isEnabled(_:)`` — overrides are on the evaluation path.
     public func isEnabledWithOverrides(_ key: String) -> Bool {
-        if let override = localOverrides[key] {
-            return override
-        }
-        return isEnabled(key)
+        isEnabled(key)
     }
     #endif
 
     // MARK: - Private Methods
+
+    private func evaluatedIsEnabled(_ key: String) -> Bool {
+        #if DEBUG
+        if let override = localOverrides[key] {
+            return override
+        }
+        #endif
+        if let flag = flags[key] {
+            return flag.evaluate(appVersion: configuration.appVersion)
+        }
+        return configuration.defaultFlags[key] ?? false
+    }
+
+    private func currentEvaluations() -> [String: Bool] {
+        var states = configuration.defaultFlags
+        for key in flags.keys {
+            states[key] = evaluatedIsEnabled(key)
+        }
+        #if DEBUG
+        for (key, value) in localOverrides {
+            states[key] = value
+        }
+        #endif
+        return states
+    }
+
+    private func publishEvaluationCache() async {
+        let states = currentEvaluations()
+        await MainActor.run {
+            FeatureFlagEvaluationCache.replace(states)
+        }
+    }
 
     private func loadCachedFlags() async {
         let cached = await cache.loadFlags()

@@ -290,7 +290,19 @@ public struct RemoteStringSetting: DynamicProperty {
 
     @MainActor
     public var wrappedValue: String {
-        observer?.string(for: key, default: defaultValue) ?? defaultValue
+        Self.resolvedValue(key, default: defaultValue, observer: observer)
+    }
+
+    @MainActor
+    public static func resolvedValue(
+        _ key: String,
+        default defaultValue: String = "",
+        observer: RemoteSettingsObserver? = nil
+    ) -> String {
+        if let observer {
+            return observer.string(for: key, default: defaultValue)
+        }
+        return RemoteSettingsEvaluationCache.string(for: key, default: defaultValue)
     }
 }
 
@@ -310,7 +322,19 @@ public struct RemoteBoolSetting: DynamicProperty {
 
     @MainActor
     public var wrappedValue: Bool {
-        observer?.bool(for: key, default: defaultValue) ?? defaultValue
+        Self.resolvedValue(key, default: defaultValue, observer: observer)
+    }
+
+    @MainActor
+    public static func resolvedValue(
+        _ key: String,
+        default defaultValue: Bool = false,
+        observer: RemoteSettingsObserver? = nil
+    ) -> Bool {
+        if let observer {
+            return observer.bool(for: key, default: defaultValue)
+        }
+        return RemoteSettingsEvaluationCache.bool(for: key, default: defaultValue)
     }
 }
 
@@ -330,7 +354,19 @@ public struct RemoteIntSetting: DynamicProperty {
 
     @MainActor
     public var wrappedValue: Int {
-        observer?.int(for: key, default: defaultValue) ?? defaultValue
+        Self.resolvedValue(key, default: defaultValue, observer: observer)
+    }
+
+    @MainActor
+    public static func resolvedValue(
+        _ key: String,
+        default defaultValue: Int = 0,
+        observer: RemoteSettingsObserver? = nil
+    ) -> Int {
+        if let observer {
+            return observer.int(for: key, default: defaultValue)
+        }
+        return RemoteSettingsEvaluationCache.int(for: key, default: defaultValue)
     }
 }
 
@@ -350,7 +386,19 @@ public struct RemoteDoubleSetting: DynamicProperty {
 
     @MainActor
     public var wrappedValue: Double {
-        observer?.double(for: key, default: defaultValue) ?? defaultValue
+        Self.resolvedValue(key, default: defaultValue, observer: observer)
+    }
+
+    @MainActor
+    public static func resolvedValue(
+        _ key: String,
+        default defaultValue: Double = 0.0,
+        observer: RemoteSettingsObserver? = nil
+    ) -> Double {
+        if let observer {
+            return observer.double(for: key, default: defaultValue)
+        }
+        return RemoteSettingsEvaluationCache.double(for: key, default: defaultValue)
     }
 }
 
@@ -370,7 +418,19 @@ public struct RemoteURLSetting: DynamicProperty {
 
     @MainActor
     public var wrappedValue: URL? {
-        observer?.url(for: key) ?? defaultValue
+        Self.resolvedValue(key, default: defaultValue, observer: observer)
+    }
+
+    @MainActor
+    public static func resolvedValue(
+        _ key: String,
+        default defaultValue: URL? = nil,
+        observer: RemoteSettingsObserver? = nil
+    ) -> URL? {
+        if let observer {
+            return observer.url(for: key) ?? defaultValue
+        }
+        return RemoteSettingsEvaluationCache.url(for: key, default: defaultValue)
     }
 }
 
