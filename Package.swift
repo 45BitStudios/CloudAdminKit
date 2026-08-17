@@ -1,6 +1,10 @@
 // swift-tools-version: 6.2
 // CloudAdminKit — the public client SDK for apps managed by CloudAdmin.
 //
+// Advertised SwiftPM pin: 1.0.0 (README / AGENTS.md / Integration.md).
+// FIXME: Vince must tag 1.0.0 after merge so `from: "1.0.0"` resolves on
+// https://github.com/45BitStudios/CloudAdminKit.git. Do not tag from this branch.
+//
 // Two independent halves, no cross-target dependency between them:
 //   CloudAdminClient/CloudAdminClientUI — feature flags, remote settings, analytics,
 //     feature requests. Talks to CloudAdmin's CloudKit backend on behalf of any app.
