@@ -49,6 +49,7 @@ let package = Package(
         // external apps depend on this directly. No SwiftUI (see CloudAdminClientUI).
         .target(
             name: "CloudAdminClient",
+            resources: [.process("PrivacyInfo.xcprivacy")],
             swiftSettings: sharedSwiftSettings
         ),
         // SwiftUI surface for CloudAdminClient: @FeatureEnabled / @Remote*Setting property
