@@ -1,0 +1,76 @@
+// swift-tools-version: 6.2
+// Tools version must not exceed the Swift shipped by Xcode Cloud's "Latest Beta or
+// Release" image, or every cloud build fails at dependency resolution ("package is
+// using Swift tools version X but the installed version is Y"). A newer local
+// Xcode beta is the usual way this leaks in — don't bump without checking the cloud image.
+// {{APP_NAME}}Kit — all app logic lives here; the Xcode app target is a thin shell.
+//
+// Layering rules (dependencies point up; violating them is the #1 review concern):
+//   {{APP_NAME}}Core    — pure Swift. No UI/platform imports. Sendable + Codable value types.
+//   {{APP_NAME}}Data    — persistence/content over Core. No SwiftUI, so extensions can link it.
+//   {{APP_NAME}}Intents — App Intents surface (the app's API): entities, queries, actions,
+//                         launchers. Links Core + Data, NEVER the UI layer.
+//                         See docs/app-intents-playbook.md.
+//   {{APP_NAME}}UI      — SwiftUI presentation. The app target imports this and nothing else.
+// Third-party SDKs that must not reach extensions (analytics, store SDKs) get their own
+// target linked by the app target ONLY, injected behind a protocol seam defined in Data.
+
+import PackageDescription
+
+let sharedSwiftSettings: [SwiftSetting] = [
+    .enableUpcomingFeature("ApproachableConcurrency"),
+]
+
+let package = Package(
+    name: "{{APP_NAME}}Kit",
+    // Day-one localization: user-facing strings live in String Catalogs
+    // (Localizable.xcstrings). Targets that gain a Resources/ folder declare
+    // resources: [.process("Resources")] so catalogs and assets ship.
+    defaultLocalization: "en",
+    platforms: [
+        // Keep these in lockstep with every Xcode target's deployment target —
+        // mixed values break archives (docs/apple-multiplatform-ci-gotchas.md §2).
+        .iOS("26.0"),
+        .macOS("26.0"),
+        .visionOS("26.0"),
+        .tvOS("26.0"),
+        .watchOS("26.0"),
+    ],
+    products: [
+        .library(name: "{{APP_NAME}}Core", targets: ["{{APP_NAME}}Core"]),
+        .library(name: "{{APP_NAME}}Data", targets: ["{{APP_NAME}}Data"]),
+        .library(name: "{{APP_NAME}}Intents", targets: ["{{APP_NAME}}Intents"]),
+        .library(name: "{{APP_NAME}}UI", targets: ["{{APP_NAME}}UI"]),
+    ],
+    targets: [
+        .target(
+            name: "{{APP_NAME}}Core",
+            swiftSettings: sharedSwiftSettings
+        ),
+        .target(
+            name: "{{APP_NAME}}Data",
+            dependencies: ["{{APP_NAME}}Core"],
+            swiftSettings: sharedSwiftSettings
+        ),
+        .target(
+            name: "{{APP_NAME}}Intents",
+            dependencies: ["{{APP_NAME}}Core", "{{APP_NAME}}Data"],
+            swiftSettings: sharedSwiftSettings
+        ),
+        .target(
+            name: "{{APP_NAME}}UI",
+            dependencies: ["{{APP_NAME}}Core", "{{APP_NAME}}Data"],
+            swiftSettings: sharedSwiftSettings
+        ),
+        .testTarget(
+            name: "{{APP_NAME}}CoreTests",
+            dependencies: ["{{APP_NAME}}Core"],
+            swiftSettings: sharedSwiftSettings
+        ),
+        .testTarget(
+            name: "{{APP_NAME}}DataTests",
+            dependencies: ["{{APP_NAME}}Data"],
+            swiftSettings: sharedSwiftSettings
+        ),
+    ]
+)

@@ -1,0 +1,64 @@
+{
+  "data": {
+    "type": "ciWorkflows",
+    "attributes": {
+      "name": "CI",
+      "description": "Build the app on pull requests to main. Package tests + lint run via ci_scripts/ci_post_clone.sh, which gates the build.",
+      "isEnabled": true,
+      "isLockedForEditing": false,
+      "clean": false,
+      "containerFilePath": "{{APP_NAME}}/{{APP_NAME}}.xcodeproj",
+      "pullRequestStartCondition": {
+        "source": { "isAllMatch": true },
+        "destination": {
+          "isAllMatch": false,
+          "patterns": [ { "pattern": "main", "isPrefix": false } ]
+        },
+        "autoCancel": true
+      },
+      "manualBranchStartCondition": {
+        "source": { "isAllMatch": true }
+      },
+      "actions": [
+        {
+          "name": "Build - iOS",
+          "actionType": "BUILD",
+          "scheme": "{{APP_NAME}}",
+          "platform": "IOS",
+          "destination": "ANY_IOS_DEVICE",
+          "isRequiredToPass": true
+        },
+        {
+          "name": "Build - visionOS",
+          "actionType": "BUILD",
+          "scheme": "{{APP_NAME}}",
+          "platform": "VISIONOS",
+          "destination": "ANY_VISIONOS_SIMULATOR",
+          "isRequiredToPass": true
+        },
+        {
+          "name": "Build - tvOS",
+          "actionType": "BUILD",
+          "scheme": "{{APP_NAME}}",
+          "platform": "TVOS",
+          "destination": "ANY_TVOS_SIMULATOR",
+          "isRequiredToPass": true
+        },
+        {
+          "name": "Build - macOS",
+          "actionType": "BUILD",
+          "scheme": "{{APP_NAME}}",
+          "platform": "MACOS",
+          "destination": "ANY_MAC",
+          "isRequiredToPass": true
+        }
+      ]
+    },
+    "relationships": {
+      "xcodeVersion": { "data": { "type": "ciXcodeVersions", "id": "{{XCODE_VERSION_ID}}" } },
+      "macOsVersion": { "data": { "type": "ciMacOsVersions", "id": "{{XCODE_VERSION_ID}}" } },
+      "product": { "data": { "type": "ciProducts", "id": "{{PRODUCT_ID}}" } },
+      "repository": { "data": { "type": "scmRepositories", "id": "{{REPOSITORY_ID}}" } }
+    }
+  }
+}

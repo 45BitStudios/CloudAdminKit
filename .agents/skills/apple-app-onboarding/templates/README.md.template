@@ -1,0 +1,61 @@
+<div align="center">
+  <img src="logo.png" alt="{{APP_NAME}}" width="320" />
+
+  # {{APP_NAME}}
+
+  **{{ONE_LINE_DESCRIPTION}}**
+
+  _45BitStudios_
+</div>
+
+---
+
+## Overview
+
+<!-- Two or three sentences: what the app is, who it's for, what makes it stand out. -->
+
+## Features
+
+<!-- Bullet the user-facing features. Keep it to what exists, not the roadmap. -->
+
+## Architecture
+
+The project is a thin app shell over the `{{APP_NAME}}Kit` Swift package:
+
+| Target | Responsibility | Depends on |
+|---|---|---|
+| **{{APP_NAME}}Core** | Pure-Swift domain logic. Value types, `Sendable`, `Codable`. | — |
+| **{{APP_NAME}}Data** | Persistence, content, sync. No SwiftUI. | Core |
+| **{{APP_NAME}}Intents** | App Intents — the app's API for Siri/Shortcuts/Spotlight. | Core, Data |
+| **{{APP_NAME}}UI** | SwiftUI presentation. The app target is a thin shell over this. | Core, Data |
+
+## Project structure
+
+```
+{{APP_NAME}}/
+├── Package.swift            # {{APP_NAME}}Kit — the library targets above
+├── {{APP_NAME}}/            # Xcode project: app shell + extension targets
+├── Sources/                 # package sources (one folder per target)
+├── Tests/                   # Swift Testing suites
+├── Tools/                   # lint.sh, check-docs.sh, check-size.sh, check-project.sh, tag-release.sh
+├── ci_scripts/              # Xcode Cloud hooks (tests + lint gate, version stamping)
+├── ci/                      # Xcode Cloud workflow payloads (CI, TestFlight)
+└── docs/                    # decision records, release process, playbooks
+```
+
+## Development
+
+```sh
+swift test              # package suites (what CI gates on)
+Tools/lint.sh           # SwiftLint + SwiftFormat, same checks as CI
+Tools/check-docs.sh     # public API docs
+Tools/check-size.sh     # binary-size budget
+Tools/check-project.sh  # project-configuration doctor
+```
+
+App and extension targets build in Xcode (scheme **{{APP_NAME}}**).
+
+## Releasing
+
+`Tools/tag-release.sh MAJOR.MINOR.PATCH` from main — the `v*` tag triggers the TestFlight
+workflow, which stamps the version and uploads all platforms. See `docs/release-process.md`.

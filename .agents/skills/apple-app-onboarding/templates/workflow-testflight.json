@@ -1,0 +1,66 @@
+{
+  "data": {
+    "type": "ciWorkflows",
+    "attributes": {
+      "name": "TestFlight",
+      "description": "Archive the app and upload to TestFlight (internal) on version tags (v*).",
+      "isEnabled": true,
+      "isLockedForEditing": false,
+      "clean": true,
+      "containerFilePath": "{{APP_NAME}}/{{APP_NAME}}.xcodeproj",
+      "tagStartCondition": {
+        "source": {
+          "isAllMatch": false,
+          "patterns": [ { "pattern": "v", "isPrefix": true } ]
+        },
+        "autoCancel": false
+      },
+      "manualTagStartCondition": {
+        "source": { "isAllMatch": true }
+      },
+      "manualBranchStartCondition": {
+        "source": { "isAllMatch": true }
+      },
+      "actions": [
+        {
+          "name": "Archive - iOS",
+          "actionType": "ARCHIVE",
+          "scheme": "{{APP_NAME}}",
+          "platform": "IOS",
+          "isRequiredToPass": true,
+          "buildDistributionAudience": "INTERNAL_ONLY"
+        },
+        {
+          "name": "Archive - visionOS",
+          "actionType": "ARCHIVE",
+          "scheme": "{{APP_NAME}}",
+          "platform": "VISIONOS",
+          "isRequiredToPass": true,
+          "buildDistributionAudience": "INTERNAL_ONLY"
+        },
+        {
+          "name": "Archive - tvOS",
+          "actionType": "ARCHIVE",
+          "scheme": "{{APP_NAME}}",
+          "platform": "TVOS",
+          "isRequiredToPass": true,
+          "buildDistributionAudience": "INTERNAL_ONLY"
+        },
+        {
+          "name": "Archive - macOS",
+          "actionType": "ARCHIVE",
+          "scheme": "{{APP_NAME}}",
+          "platform": "MACOS",
+          "isRequiredToPass": true,
+          "buildDistributionAudience": "INTERNAL_ONLY"
+        }
+      ]
+    },
+    "relationships": {
+      "xcodeVersion": { "data": { "type": "ciXcodeVersions", "id": "{{XCODE_VERSION_ID}}" } },
+      "macOsVersion": { "data": { "type": "ciMacOsVersions", "id": "{{XCODE_VERSION_ID}}" } },
+      "product": { "data": { "type": "ciProducts", "id": "{{PRODUCT_ID}}" } },
+      "repository": { "data": { "type": "scmRepositories", "id": "{{REPOSITORY_ID}}" } }
+    }
+  }
+}

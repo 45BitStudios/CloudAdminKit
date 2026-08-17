@@ -1,0 +1,19 @@
+# SwiftFormat — CI-gated via ci_scripts/ci_post_clone.sh (swiftformat --lint).
+# Run `Tools/lint.sh --fix` to apply.
+
+--swiftversion 6.0
+--exclude .build
+
+# Layout
+--indent 4
+--maxwidth 140
+--wraparguments before-first
+--wrapcollections before-first
+
+# Style
+--self remove
+--stripunusedargs closure-only
+--importgrouping testable-bottom
+
+# Off: fights hand-aligned tables and SwiftLint ownership of these concerns
+--disable wrapMultilineStatementBraces,andOperator

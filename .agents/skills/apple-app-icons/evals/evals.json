@@ -1,0 +1,54 @@
+{
+  "skill_name": "apple-app-icons",
+  "evals": [
+    {
+      "id": 0,
+      "eval_name": "all-platforms",
+      "prompt": "I've got master icon art at art/master-1024.png in this project. Generate app icon assets for iOS, macOS, tvOS, visionOS and watchOS into Assets.xcassets so icons show up on every platform, and verify they compile.",
+      "expected_output": "Assets.xcassets contains AppIcon.appiconset (ios 1024 + mac slots + watchos 1024), App Icon & Top Shelf Image.brandassets (layered imagestacks 400x240 + 1280x768, Top Shelf 1920x720 + wide 2320x720, @1x and @2x), and a visionOS solidimagestack (1024 @2x), all with valid Contents.json, verified with actool",
+      "files": [
+        "TestApp/art/master-1024.png",
+        "TestApp/Assets.xcassets/Contents.json"
+      ],
+      "assertions": [
+        "appiconset covers iOS 1024, all 10 macOS slots (16-512 @1x/@2x), and a watchOS 1024 entry, with PNGs at the exact pixel sizes",
+        "tvOS brandassets present with layered 400x240 and 1280x768 imagestacks plus 1920x720 and 2320x720 Top Shelf imagesets",
+        "visionOS solidimagestack present with a 1024px vision-idiom @2x layered image",
+        "every Contents.json in the catalog is valid JSON",
+        "actool compiles the catalog for all 5 platforms and registers a primary icon in the partial Info.plist"
+      ]
+    },
+    {
+      "id": 1,
+      "eval_name": "tvos-fix",
+      "prompt": "my apple tv build of this app has no icon on the home screen. the art is in art/master-1024.png. can you fix the assets so tvOS shows an icon and top shelf image? Assets.xcassets is in the project root.",
+      "expected_output": "Assets.xcassets contains a tvOS brandassets bundle with layered App Icon imagestack (400x240), App Store imagestack (1280x768), and Top Shelf imagesets (1920x720, 2320x720), compiling under actool with CFBundlePrimaryIcon and TVTopShelfImage registered",
+      "files": [
+        "TestApp/art/master-1024.png",
+        "TestApp/Assets.xcassets/Contents.json"
+      ],
+      "assertions": [
+        "tvOS brandassets present with primary-app-icon imagestacks at 400x240 and 1280x768, images at correct pixel sizes",
+        "Top Shelf image present at 1920x720 (wide 2320x720 variant counts as bonus, not required)",
+        "actool appletvsimulator/tv compile succeeds and the partial Info.plist registers CFBundlePrimaryIcon and TVTopShelfImage",
+        "every Contents.json in the catalog is valid JSON"
+      ]
+    },
+    {
+      "id": 2,
+      "eval_name": "watch-target-empty-catalog",
+      "prompt": "Our iOS TestFlight archive fails with Preparing build for App Store Connect failed, but macOS/tvOS/visionOS from the same run succeed. The Watch target's AppIcon.appiconset is the empty Xcode template. Master art is at art/master-1024.png. Fill the Watch catalog so the iOS upload can succeed.",
+      "expected_output": "Watch/Assets.xcassets/AppIcon.appiconset has a 1024 watchos slot with a filename and PNG on disk; actool watchsimulator/watch registers CFBundlePrimaryIcon. The main app catalog is left alone.",
+      "files": [
+        "TestApp/art/master-1024.png",
+        "TestApp/Watch/Assets.xcassets/AppIcon.appiconset/Contents.json"
+      ],
+      "assertions": [
+        "Watch AppIcon.appiconset Contents.json has a platform watchos 1024x1024 entry with a filename",
+        "that filename exists as a PNG next to Contents.json",
+        "actool watchsimulator/watch on Watch/Assets.xcassets registers CFBundlePrimaryIcon",
+        "the main app Assets.xcassets is not rewritten"
+      ]
+    }
+  ]
+}

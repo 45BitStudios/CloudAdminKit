@@ -1,0 +1,58 @@
+# SwiftLint — CI-gated via ci_scripts/ci_post_clone.sh (swiftlint --strict, so
+# warnings fail the build too). Keep this file small and intentional; when you
+# disable a rule, say why.
+
+included:
+  - Sources
+  - Tests
+  - {{APP_NAME}}          # app shell + extension targets
+
+excluded:
+  - .build
+
+opt_in_rules:
+  - closure_spacing
+  - contains_over_filter_count
+  - contains_over_filter_is_empty
+  - empty_count
+  - first_where
+  - last_where
+  - prefer_zero_over_explicit_init
+  - redundant_nil_coalescing
+  - sorted_first_last
+  - toggle_bool
+  - unneeded_parentheses_in_closure_argument
+
+disabled_rules:
+  - todo                    # plans live in docs/; short-lived TODOs in code are fine
+  - trailing_comma          # SwiftFormat owns comma style
+  - opening_brace           # SwiftFormat owns whitespace/brace style
+
+line_length:
+  warning: 140
+  error: 200
+  ignores_comments: true
+  ignores_urls: true
+
+file_length:
+  warning: 700
+  error: 1000
+
+type_body_length:
+  warning: 400
+  error: 600
+
+function_body_length:
+  warning: 80
+  error: 120
+
+cyclomatic_complexity:
+  warning: 15
+  error: 25
+
+identifier_name:
+  min_length: 1             # x/y/dx/dy are legitimate in geometry/board code
+  max_length: 60
+
+nesting:
+  type_level: 3
