@@ -141,6 +141,9 @@ public actor AnalyticsService {
     /// Batch timer task
     private var batchTimerTask: Task<Void, Never>?
 
+    /// UserDefaults key for the process-and-relaunch opt-out flag.
+    static let optOutStorageKey = "com.cloudadminkit.analytics.optedOut"
+
     /// Local persistence file URL
     private var persistenceURL: URL {
         let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
@@ -180,9 +183,19 @@ public actor AnalyticsService {
 
     // MARK: - Public Tracking Methods
 
+    /// Whether tracking is currently accepted (configure-time flag and opt-out).
+    public var isEnabled: Bool {
+        configuration.isEnabled && !isOptedOut
+    }
+
+    /// Whether the user has opted out. Survives process relaunch via UserDefaults.
+    public var isOptedOut: Bool {
+        UserDefaults.standard.bool(forKey: Self.optOutStorageKey)
+    }
+
     /// Tracks a screen view
     public func trackScreen(_ screenName: String, properties: AnalyticsProperties = [:]) async {
-        guard configuration.isEnabled else { return }
+        guard isEnabled else { return }
 
         // Calculate duration of previous screen
         var duration: TimeInterval? = nil
@@ -208,7 +221,7 @@ public actor AnalyticsService {
 
     /// Tracks a button tap
     public func trackButtonTap(_ buttonName: String, on screenName: String? = nil, properties: AnalyticsProperties = [:]) async {
-        guard configuration.isEnabled else { return }
+        guard isEnabled else { return }
 
         var props = properties
         props["button_name"] = buttonName
@@ -226,7 +239,7 @@ public actor AnalyticsService {
 
     /// Tracks a feature being used
     public func trackFeature(_ featureName: String, properties: AnalyticsProperties = [:]) async {
-        guard configuration.isEnabled else { return }
+        guard isEnabled else { return }
 
         let event = createEvent(
             type: .featureUsed,
@@ -240,7 +253,7 @@ public actor AnalyticsService {
 
     /// Tracks a search
     public func trackSearch(_ query: String, results: Int, properties: AnalyticsProperties = [:]) async {
-        guard configuration.isEnabled else { return }
+        guard isEnabled else { return }
 
         var props = properties
         props["query"] = query
@@ -258,7 +271,7 @@ public actor AnalyticsService {
 
     /// Tracks an error
     public func trackError(_ error: Error, isFatal: Bool = false, properties: AnalyticsProperties = [:]) async {
-        guard configuration.isEnabled else { return }
+        guard isEnabled else { return }
 
         let errorInfo = ErrorInfo(from: error, isFatal: isFatal)
 
@@ -275,7 +288,7 @@ public actor AnalyticsService {
 
     /// Tracks a purchase
     public func trackPurchase(productID: String, price: Decimal, currency: String, properties: AnalyticsProperties = [:]) async {
-        guard configuration.isEnabled else { return }
+        guard isEnabled else { return }
 
         var props = properties
         props["product_id"] = productID
@@ -294,7 +307,7 @@ public actor AnalyticsService {
 
     /// Tracks an onboarding step
     public func trackOnboardingStep(_ step: Int, of total: Int, name: String? = nil, properties: AnalyticsProperties = [:]) async {
-        guard configuration.isEnabled else { return }
+        guard isEnabled else { return }
 
         var props = properties
         props["step"] = step
@@ -313,7 +326,7 @@ public actor AnalyticsService {
 
     /// Tracks a share action
     public func trackShare(_ contentType: String, method: String? = nil, properties: AnalyticsProperties = [:]) async {
-        guard configuration.isEnabled else { return }
+        guard isEnabled else { return }
 
         var props = properties
         props["content_type"] = contentType
@@ -333,7 +346,7 @@ public actor AnalyticsService {
 
     /// Tracks a notification interaction
     public func trackNotification(_ action: String, notificationID: String? = nil, properties: AnalyticsProperties = [:]) async {
-        guard configuration.isEnabled else { return }
+        guard isEnabled else { return }
 
         var props = properties
         props["action"] = action
@@ -353,7 +366,7 @@ public actor AnalyticsService {
 
     /// Tracks a deep link
     public func trackDeepLink(_ url: URL, properties: AnalyticsProperties = [:]) async {
-        guard configuration.isEnabled else { return }
+        guard isEnabled else { return }
 
         var props = properties
         props["url"] = url.absoluteString
@@ -372,7 +385,7 @@ public actor AnalyticsService {
 
     /// Tracks a custom event
     public func trackCustom(_ eventName: String, properties: AnalyticsProperties = [:]) async {
-        guard configuration.isEnabled else { return }
+        guard isEnabled else { return }
 
         let event = createEvent(
             type: .custom,
@@ -386,7 +399,7 @@ public actor AnalyticsService {
 
     /// Generic track method
     public func track(_ event: AnalyticsEvent) async {
-        guard configuration.isEnabled else { return }
+        guard isEnabled else { return }
         await queueEvent(event)
         log("Event: \(event.eventType.rawValue)")
     }
@@ -523,10 +536,19 @@ public actor AnalyticsService {
         await logout(clearAnonymousID: true)
     }
 
-    /// Opts out of analytics
+    /// Opts out of analytics. Persists across process relaunch. Subsequent
+    /// `track*` calls do not enqueue or write `analytics_queue.json`.
     public func optOut() async {
+        UserDefaults.standard.set(true, forKey: Self.optOutStorageKey)
         await clearQueue()
         log("User opted out of analytics")
+    }
+
+    /// Re-enables tracking after ``optOut()``. Does not restore previously
+    /// cleared events; new `track*` calls enqueue again.
+    public func optIn() async {
+        UserDefaults.standard.set(false, forKey: Self.optOutStorageKey)
+        log("User opted in to analytics")
     }
 
     // MARK: - Private Methods
