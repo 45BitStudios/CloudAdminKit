@@ -52,11 +52,12 @@ let package = Package(
             swiftSettings: sharedSwiftSettings
         ),
         // SwiftUI surface for CloudAdminClient: @FeatureEnabled / @Remote*Setting property
-        // wrappers, analytics view modifiers, and PushAppDelegate (forwards into
-        // CloudAdminPushUI's PushRegistrationController).
+        // wrappers, analytics view modifiers, debug views. No push — that lives in
+        // CloudAdminPushUI so an app that only wants @FeatureEnabled does not link
+        // UserNotifications / registerForRemoteNotifications (ITMS-90683).
         .target(
             name: "CloudAdminClientUI",
-            dependencies: ["CloudAdminClient", "CloudAdminPushUI"],
+            dependencies: ["CloudAdminClient"],
             swiftSettings: sharedSwiftSettings
         ),
         // Zero-dep HTTP client for IkigaiServer (device + Live Activity token registration).
@@ -64,7 +65,8 @@ let package = Package(
             name: "CloudAdminPush",
             swiftSettings: sharedSwiftSettings
         ),
-        // SwiftUI-observable push registration/authorization state. See its ua-debt comment.
+        // SwiftUI-observable push registration/authorization state + PushAppDelegate.
+        // See PushRegistrationController's ua-debt comment.
         .target(
             name: "CloudAdminPushUI",
             swiftSettings: sharedSwiftSettings

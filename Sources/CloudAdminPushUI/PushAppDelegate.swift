@@ -3,7 +3,6 @@
 // unavailable on tvOS, and UIApplication/UIApplicationDelegate are unavailable on watchOS —
 // exclude both (docs/apple-multiplatform-ci-gotchas.md §3).
 #if canImport(UIKit) && !os(tvOS) && !os(watchOS)
-import CloudAdminPushUI
 import Foundation
 import UIKit
 import UserNotifications
@@ -15,7 +14,7 @@ import UserNotifications
 /// nothing app-specific baked in, so it is reusable across apps:
 ///
 /// ```swift
-/// import CloudAdminClientUI
+/// import CloudAdminPushUI
 ///
 /// @main
 /// struct MyApp: App {

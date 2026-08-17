@@ -15,7 +15,7 @@ entitlements, etc.) scoped to the features you actually ship.
 - **`CloudAdminClient`** — Analytics, FeatureFlags, FeatureRequests, RemoteSettings services. No UI.
 - **`CloudAdminClientUI`** — SwiftUI property wrappers, view modifiers, and debug views for the above.
 - **`CloudAdminPush`** — APNs registration and send/update HTTP client (`CloudAdminPushClient`).
-- **`CloudAdminPushUI`** — `PushRegistrationController`, an `@Observable` APNs delegate helper.
+- **`CloudAdminPushUI`** — `PushRegistrationController` and `PushAppDelegate`, an `@Observable` APNs helper.
 
 ## Add the package
 
@@ -145,6 +145,12 @@ PushRegistrationController.shared.onDeviceToken = { token in
 }
 await PushRegistrationController.shared.requestAuthorization()
 PushRegistrationController.shared.registerForRemoteNotifications()
+
+// Or drop in the adaptor (still a CloudAdminPushUI type — do not import
+// CloudAdminClientUI just to get this):
+//
+//   import CloudAdminPushUI
+//   @UIApplicationDelegateAdaptor(PushAppDelegate.self) private var pushDelegate
 ```
 
 ## Documentation

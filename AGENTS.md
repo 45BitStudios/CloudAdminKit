@@ -20,7 +20,7 @@ Depend on exactly the products you use. `Package.swift` ships four libraries:
 - `CloudAdminClient` — Analytics, FeatureFlags, FeatureRequests, RemoteSettings (no UI)
 - `CloudAdminClientUI` — SwiftUI property wrappers, modifiers, debug views for the above
 - `CloudAdminPush` — APNs registration/send HTTP client
-- `CloudAdminPushUI` — `PushRegistrationController`, an `@Observable` APNs delegate helper
+- `CloudAdminPushUI` — `PushRegistrationController` and `PushAppDelegate`, an `@Observable` APNs helper
 
 Do not create or depend on a single umbrella product that re-exports all of the above. Linking
 an aggregate you don't fully use is what triggered App Store Connect's **ITMS-90683** privacy
@@ -77,6 +77,10 @@ PushRegistrationController.shared.onDeviceToken = { token in
 }
 await PushRegistrationController.shared.requestAuthorization()
 PushRegistrationController.shared.registerForRemoteNotifications()
+
+// Or, in a SwiftUI App (CloudAdminPushUI — never CloudAdminClientUI):
+//   import CloudAdminPushUI
+//   @UIApplicationDelegateAdaptor(PushAppDelegate.self) private var pushDelegate
 ```
 
 **Analytics** — track events:
