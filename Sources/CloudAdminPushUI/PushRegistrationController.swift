@@ -27,8 +27,9 @@ import AppKit
 /// Observable bridge between the app delegate and SwiftUI for push registration state.
 ///
 /// An app delegate created by `@UIApplicationDelegateAdaptor` is owned by the framework and
-/// awkward to read from views, so the shared ``AppDelegate`` writes every push event into
-/// this `@MainActor` `@Observable` object. Views observe it directly; app-specific glue can
+/// awkward to read from views, so the shared `PushAppDelegate` (in `CloudAdminClientUI`) writes
+/// every push event into this `@MainActor` `@Observable` object. Views observe it directly;
+/// app-specific glue can
 /// set ``onDeviceToken`` to forward the token somewhere custom (the built-in forwarding to
 /// `PushNotificationService` / `IkigaiPushRegistrar` happens regardless).
 ///

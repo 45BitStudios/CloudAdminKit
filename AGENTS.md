@@ -10,7 +10,7 @@ CloudAdminKit is a **public** repo. It resolves over plain HTTPS with no credent
 key, and no Xcode Cloud "Repository access" grant to configure.
 
 ```swift
-.package(url: "https://github.com/45BitStudios/CloudAdminKit.git", from: "1.0.0"),
+.package(url: "https://github.com/45BitStudios/CloudAdminKit.git", branch: "main"),
 ```
 
 ## 2. Pick granular products only — never a combined aggregate

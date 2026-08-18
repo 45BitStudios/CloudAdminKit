@@ -11,7 +11,7 @@ Admin dependency — and matches the record schema Cloud Admin writes (`Schema/c
 
 This logic was previously provided by the Ikigai package; it now lives here so it's owned
 alongside the admin side that shares these record types. For the SwiftUI property wrappers and
-view modifiers, see ``CloudAdminClientUI``.
+view modifiers, see the `CloudAdminClientUI` target.
 
 ## Topics
 
