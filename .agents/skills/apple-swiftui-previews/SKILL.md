@@ -3,11 +3,11 @@ name: apple-swiftui-previews
 description: >
   Add SwiftUI #Preview with mock data to every view, a preview-capture CLI that
   writes Designs/previews/<device>/ PNGs (iphone, ipad, mac, tv, vision, watch),
-  a compare script against a previous git revision, a shared Screens Xcode
-  scheme, and an Xcode Cloud Screens workflow. Proven on Tubeactions and
-  Homestead. Use when the user wants previews, design screenshots, visual
-  history, screenshot diffs, iPad/Mac/TV/Watch canvases, a Screens/Design
-  scheme, or runs /apple-swiftui-previews.
+  a compare script against a previous git revision, and a shared Screens Xcode
+  scheme run locally. Proven on Tubeactions and Homestead. Use when the user
+  wants previews, design screenshots, visual history, screenshot diffs,
+  iPad/Mac/TV/Watch canvases, a Screens/Design scheme, or runs
+  /apple-swiftui-previews.
 ---
 
 # SwiftUI previews + design screenshots
@@ -30,7 +30,6 @@ Templates live in `templates/` next to this file. Substitute placeholders, then
 | `{{XCODEPROJ_DIR}}` | `Homestead` (folder that contains the `.xcodeproj`) |
 | `{{XCODEPROJ_FILENAME}}` | `Homestead.xcodeproj` |
 | `{{APP_TARGET_ID}}` | `61BAC72B…` (`PBXNativeTarget` id for the app, from pbxproj) |
-| `{{PRODUCT_ID}}` / `{{REPOSITORY_ID}}` / `{{XCODE_VERSION_ID}}` | from `ci/workflow-ci.json` or `asc xcode-cloud` |
 
 ## Phase 0 — Which app
 
@@ -53,14 +52,10 @@ Copy and substitute:
 - `templates/capture-previews.sh` → `Tools/capture-previews.sh`
 - `templates/compare-previews.sh` → `Tools/compare-previews.sh`
 - `templates/compare-previews.swift` → `Tools/compare-previews.swift`
-- `templates/ci_post_xcodebuild.sh` → `ci_scripts/ci_post_xcodebuild.sh` (merge if the repo already has one)
-- `templates/workflow-screens.json` → `ci/workflow-screens.json`
 
 `chmod +x` the scripts. Wire `Tools/check-previews.sh` into `ci_scripts/ci_post_clone.sh`
-next to lint (cheap, no compile). Do **not** run capture from post-clone.
-
-Add `ci_scripts/ci_post_xcodebuild.sh` to `Tools/check-project.sh`'s executable list
-if that file exists.
+next to lint (cheap, no compile). Do **not** run capture from post-clone, from the
+normal app scheme, or from Xcode Cloud. There is no Screens Cloud workflow.
 
 ## Phase 2 — Mock data + preview overrides
 
@@ -129,24 +124,13 @@ Grep the pbxproj for `isa = PBXNativeTarget` / the app target name to fill
 `{{APP_TARGET_ID}}`. **Do not** point the scheme at the SPM `preview-capture`
 executable — Xcode reports `Scheme Screens is not currently configured for the
 build action.` Point it at the app target (Tubeactions does this). Capture runs
-from the scheme post-action (`Tools/capture-previews.sh`, all devices) and from
-`ci_post_xcodebuild.sh`.
+from the scheme post-action (`Tools/capture-previews.sh`, all devices) when you
+build **Screens** locally. Do not add an Xcode Cloud workflow for it and do not
+trigger it from PRs.
 
 Verify: `xcodebuild -project {{XCODEPROJ_DIR}}/{{XCODEPROJ_FILENAME}} -scheme Screens -destination 'generic/platform=macOS' -showBuildSettings` prints `PRODUCT_NAME`.
 
-## Phase 6 — Xcode Cloud
-
-Fill IDs in `ci/workflow-screens.json` from the existing CI workflow
-(`asc xcode-cloud workflows --app …` / `ci/workflow-ci.json`). Create it:
-
-```sh
-asc xcode-cloud workflows create --file ci/workflow-screens.json
-```
-
-One macOS BUILD of scheme `Screens`. PRs to `main` + manual branch. Do not add
-this action to the existing CI workflow.
-
-## Phase 7 — Capture once
+## Phase 6 — Capture once
 
 On a Mac:
 
@@ -198,7 +182,7 @@ True watchOS / tvOS / visionOS canvas previews live in those modules (`WatchUI`,
 behind `#if os(watchOS)` and are opened with that run destination — the PNG CLI
 will not render them.
 
-## Phase 8 — Compare current vs previous
+## Phase 7 — Compare current vs previous
 
 Git is the archive. GitHub's PR image viewer (2-up / swipe / onion-skin) is the
 best committed comparison. Locally, after a capture:
@@ -216,8 +200,7 @@ Output is `Designs/previews-diff/` (gitignored):
 - `summary.txt` — same / changed / new / removed, with % of pixels that moved
 
 Add `Designs/previews-diff/` to `.gitignore`. Do not commit the diffs — they are
-derived. The Screens Cloud workflow runs the same compare against the PR's
-destination branch and copies the folder into the result bundle.
+derived.
 
 ## Traps (from Tubeactions)
 
@@ -232,7 +215,7 @@ destination branch and copies the folder into the result bundle.
 - After a successful write the CLI must `Foundation.exit(0)`. NSHostingView/NSWindow can leave AppKit's run loop alive so Screens hangs after every PNG is already on disk.
 - Shared auth / App Group `@AppStorage` will show whatever is on disk unless you add a preview override.
 - `#Preview` does not take `arguments: [true, false]`. Use multiple named previews or `@Previewable @State`.
-- Cloud will not see the scheme until `Screens.xcscheme` is on the branch it builds.
+- Do not create an Xcode Cloud workflow for Screens and do not start it from PRs. Capture is local (scheme **Screens** or `Tools/capture-previews.sh`).
 - Screens scheme post-actions inherit xcodebuild's env. That breaks `swift run`: `SDKROOT=auto` (`SDK "auto" cannot be located`), `OTHER_SWIFT_FLAGS` without `-package-name` (`package` access fails), and `BUILD_DIR`/`OBJROOT` (SPM product not found, e.g. `IkigaiAppShell`). `capture-previews.sh` must run `swift` via `env -i` (keep HOME/PATH/DEVELOPER_DIR). Unsetting SDKROOT alone is not enough.
 - `swift run preview-capture` uses `Package.swift` + `Package.resolved`, not the Xcode target graph. Every product a UI target links must exist as an SPM product on the resolved pin (`swift package update` if Xcode is ahead of the pin).
 - `install.sh --into-all` vendors this skill into `.agents/skills`. It does **not** refresh `Tools/capture-previews.sh` in each app — re-copy the template when the script changes.
